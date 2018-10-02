@@ -24,7 +24,7 @@ class LoginActivity : AppCompatActivity() {
     private fun initLoginButton() {
         btnLogin.setOnClickListener {
             ApiService.login(etLogin.text.toString(), etPassword.text.toString(), object : LoginListener {
-                override fun onLoginResponce(loginResponse: LoginResponse?) {
+                override fun onLoginResponse(loginResponse: LoginResponse?) {
                     loginResponse?.getAccessToken()
                 }
 

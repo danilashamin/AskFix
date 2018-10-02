@@ -24,7 +24,7 @@ object ApiService {
             }
 
             override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
-                loginListener.onLoginResponce(response.body())
+                loginListener.onLoginResponse(response.body())
             }
 
         })
