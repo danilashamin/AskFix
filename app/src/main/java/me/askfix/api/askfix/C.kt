@@ -6,5 +6,5 @@ object C {
     const val BASE_URL = "http://api.askfix.me/"
     const val JWT = "JWT"
     const val UUID = "UUID"
-    const val CENTRIFUGO_ADRESS = "ws://askfix.me:9000/connection/websocket"
+    const val CENTRIFUGO_ADDRESS = "ws://askfix.me:9000/connection/websocket"
 }
