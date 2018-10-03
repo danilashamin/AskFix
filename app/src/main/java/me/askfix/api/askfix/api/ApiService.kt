@@ -1,6 +1,8 @@
 package me.askfix.api.askfix.api
 
 import me.askfix.api.askfix.C.BASE_URL
+import me.askfix.api.askfix.model.ChannelsAndApplicationsListener
+import me.askfix.api.askfix.model.ChannelsResponse
 import me.askfix.api.askfix.model.LoginListener
 import me.askfix.api.askfix.model.LoginResponse
 import retrofit2.Call
@@ -15,16 +17,31 @@ object ApiService {
             .addConverterFactory(GsonConverterFactory.create())
             .build()!!
 
-    private val loginService = retrofit.create(LoginService::class.java)
+    private val retrofitService = retrofit.create(RetrofitService::class.java)
 
     public fun login(username: String, password: String, loginListener: LoginListener) {
-        val loginResponse = loginService.getLoginResponse(username, password)
+        val loginResponse = retrofitService.getLoginResponse(username, password)
         loginResponse.enqueue(object : Callback<LoginResponse> {
             override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                loginListener.onError(call, t)
             }
 
             override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                 loginListener.onLoginResponse(response.body())
+            }
+
+        })
+    }
+
+    public fun getChannelsAndApplications(accessToken: String?, channelsAndApplicationsListener: ChannelsAndApplicationsListener) {
+        val channelsResponse = retrofitService.getChannelsAndApplications(accessToken)
+        channelsResponse.enqueue(object : Callback<ChannelsResponse> {
+            override fun onFailure(call: Call<ChannelsResponse>, t: Throwable) {
+                channelsAndApplicationsListener.onError(call, t)
+            }
+
+            override fun onResponse(call: Call<ChannelsResponse>, response: Response<ChannelsResponse>) {
+                channelsAndApplicationsListener.onChannelsAndApplicationsResponse(response.body())
             }
 
         })
