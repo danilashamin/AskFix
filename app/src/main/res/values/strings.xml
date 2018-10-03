@@ -6,4 +6,7 @@
     <string name="password">Password</string>
     <string name="delete_token">Delete Token</string>
     <string name="login">Login</string>
+    <string name="invalid_values">Incorrect username or password</string>
+    <string name="token_successful">Token received successfully</string>
+    <string name="start">start</string>
 </resources>
