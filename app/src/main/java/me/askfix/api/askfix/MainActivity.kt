@@ -20,10 +20,8 @@ import com.centrifugal.centrifuge.android.credentials.Token
 import com.centrifugal.centrifuge.android.credentials.User
 import com.centrifugal.centrifuge.android.listener.SubscriptionListener
 import com.centrifugal.centrifuge.android.subscription.SubscriptionRequest
-import me.askfix.api.askfix.C.CENTRIFUGO_ADRESS
+import me.askfix.api.askfix.C.CENTRIFUGO_ADDRESS
 import com.centrifugal.centrifuge.android.listener.ConnectionListener
-
-
 
 
 class MainActivity : AppCompatActivity() {
@@ -56,9 +54,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun subscribe(channelsResponse: ChannelsResponse?) {
-        val centrifugo = Centrifugo.Builder(CENTRIFUGO_ADRESS)
-                .setUser(User(getUUID(), null))
-                .setToken(Token(getJWT(), ""))
+        val centrifugo = Centrifugo.Builder(CENTRIFUGO_ADDRESS)
+                .setUser(User("", null))
+                .setToken(Token(getJWT(), System.currentTimeMillis().toString()))
                 .build()
 
 
@@ -68,12 +66,12 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onSubscribed(channelName: String?) {
-                Log.d("subscription", "onSubscriber channelName = $channelName")
+                Log.d("subscription", "onSubscribed channelName = $channelName")
 
             }
 
             override fun onUnsubscribed(channelName: String?) {
-                Log.d("subscription", "onUSubscriber channelName = $channelName")
+                Log.d("subscription", "onUnsubscribed channelName = $channelName")
             }
 
         })
