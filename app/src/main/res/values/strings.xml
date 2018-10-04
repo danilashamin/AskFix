@@ -9,4 +9,7 @@
     <string name="invalid_values">Incorrect username or password</string>
     <string name="token_successful">Token received successfully</string>
     <string name="start">start</string>
+    <string name="connected">Connected with client ID</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="new_publication">New publication from channel</string>
 </resources>

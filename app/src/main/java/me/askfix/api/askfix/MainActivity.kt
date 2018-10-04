@@ -4,24 +4,22 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.util.Log
 import android.widget.Toast
+import centrifuge.Centrifuge
 import com.annimon.stream.Stream
+import kotlinx.android.synthetic.main.activity_main.*
 import me.askfix.api.askfix.C.ACCESS_TOKEN
+import me.askfix.api.askfix.C.CENTRIFUGO_ADDRESS
 import me.askfix.api.askfix.C.JWT
 import me.askfix.api.askfix.C.SHARED_PREFS
 import me.askfix.api.askfix.C.UUID
 import me.askfix.api.askfix.api.ApiService
+import me.askfix.api.askfix.centrifuge.AppConnectHandler
+import me.askfix.api.askfix.centrifuge.AppDisconnectHandler
+import me.askfix.api.askfix.centrifuge.AppPublishHandler
 import me.askfix.api.askfix.model.ChannelsAndApplicationsListener
 import me.askfix.api.askfix.model.ChannelsResponse
 import retrofit2.Call
-import com.centrifugal.centrifuge.android.Centrifugo
-import com.centrifugal.centrifuge.android.credentials.Token
-import com.centrifugal.centrifuge.android.credentials.User
-import com.centrifugal.centrifuge.android.listener.SubscriptionListener
-import com.centrifugal.centrifuge.android.subscription.SubscriptionRequest
-import me.askfix.api.askfix.C.CENTRIFUGO_ADDRESS
-import com.centrifugal.centrifuge.android.listener.ConnectionListener
 
 
 class MainActivity : AppCompatActivity() {
@@ -54,52 +52,39 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun subscribe(channelsResponse: ChannelsResponse?) {
-        val centrifugo = Centrifugo.Builder(CENTRIFUGO_ADDRESS)
-                .setUser(User("", null))
-                .setToken(Token(getJWT(), System.currentTimeMillis().toString()))
-                .build()
+        val events = Centrifuge.newEventHub()
+        val connectHandler = AppConnectHandler(this)
+        val disconnectHandler = AppDisconnectHandler(this)
+
+        events.onConnect(connectHandler)
+        events.onDisconnect(disconnectHandler)
+        val client = Centrifuge.new_(
+                CENTRIFUGO_ADDRESS,
+                events,
+                Centrifuge.defaultConfig()
+        )
+        client.setToken(getJWT())
+        try {
+            client.connect()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            tvConnectStatus.text = e.toString()
+            return
+        }
 
 
-        centrifugo.setSubscriptionListener(object : SubscriptionListener {
-            override fun onSubscriptionError(channelName: String?, error: String?) {
-                Log.d("subscription", "onSubscriptionError channelName = $channelName error=$error")
-            }
+        val subEvents = Centrifuge.newSubscriptionEventHub()
+        val publishHandler = AppPublishHandler(this)
+        subEvents.onPublish(publishHandler)
 
-            override fun onSubscribed(channelName: String?) {
-                Log.d("subscription", "onSubscribed channelName = $channelName")
-
-            }
-
-            override fun onUnsubscribed(channelName: String?) {
-                Log.d("subscription", "onUnsubscribed channelName = $channelName")
-            }
-
-        })
-
-        centrifugo.setConnectionListener(object : ConnectionListener {
-
-            override fun onWebSocketOpen() {
-                Log.d("subscription", "onWebSocketOpen")
-            }
-
-            override fun onConnected() {
-                Log.d("subscription", "onConnected")
-
-            }
-
-            override fun onDisconnected(code: Int, reason: String, remote: Boolean) {
-                Log.d("subscription", "onDisconnected, code = $code, reason = $reason, remote = $remote")
-
-            }
-
-        })
-
-        centrifugo.connect()
-
-        Stream.ofNullable(channelsResponse?.channels)
-                .forEach {
-                    centrifugo.subscribe(SubscriptionRequest("${it.domain}${it.uuid}"))
-                }
+        try {
+            Stream.ofNullable(channelsResponse?.channels)
+                    .forEach {
+                        client.subscribe("${it.domain}:${it.uuid}", subEvents)
+                    }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
     }
 
