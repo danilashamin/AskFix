@@ -1,45 +1,37 @@
 package me.askfix.api.askfix;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.annimon.stream.Stream;
-
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import org.jetbrains.annotations.NotNull;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import centrifuge.Centrifuge;
-import centrifuge.Client;
-import centrifuge.ConnectHandler;
-import centrifuge.DisconnectHandler;
-import centrifuge.EventHub;
-import centrifuge.PublishEvent;
-import centrifuge.PublishHandler;
-import centrifuge.Subscription;
-import centrifuge.SubscriptionEventHub;
 import me.askfix.api.askfix.api.ApiService;
-import me.askfix.api.askfix.centrifuge.AppConnectHandler;
-import me.askfix.api.askfix.centrifuge.AppDisconnectHandler;
-import me.askfix.api.askfix.centrifuge.AppPublishHandler;
-import me.askfix.api.askfix.centrifuge.OnPublishListener;
+import me.askfix.api.askfix.centrifuge.DataReceiver;
+import me.askfix.api.askfix.centrifuge.PublishService;
+import me.askfix.api.askfix.events.ConnectEvent;
+import me.askfix.api.askfix.events.DataReceivedEvent;
 import me.askfix.api.askfix.model.ChannelsAndApplicationsListener;
 import me.askfix.api.askfix.model.ChannelsResponse;
 import retrofit2.Call;
 
 import static me.askfix.api.askfix.C.ACCESS_TOKEN;
-import static me.askfix.api.askfix.C.CENTRIFUGO_ADDRESS;
-import static me.askfix.api.askfix.C.JWT;
+import static me.askfix.api.askfix.C.CHANNELS_RESPONSE;
+import static me.askfix.api.askfix.C.DATA_RECEIVED_ACTION;
 import static me.askfix.api.askfix.C.SHARED_PREFS;
-import static me.askfix.api.askfix.C.UUID;
 
 public class MainActivity extends AppCompatActivity {
-    @BindView(R.id.tvConnectStatus)
+    private DataReceiver dataReceiver;
+
     TextView tvConnectStatus;
 
     public static void start(Context context) {
@@ -51,16 +43,45 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ButterKnife.bind(this);
         tvConnectStatus = findViewById(R.id.tvConnectStatus);
-        getListOfChannelsAndApplications();
+        dataReceiver = new DataReceiver();
+        if(!isServiceRunning(PublishService.class)){
+            getListOfChannelsAndApplicationsAndStartService();
+        }
     }
 
-    private void getListOfChannelsAndApplications() {
+    @Override
+    public void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
+    }
+
+    @Override
+    protected void onResume() {
+        IntentFilter intentFilter = new IntentFilter(DATA_RECEIVED_ACTION);
+        registerReceiver(dataReceiver, intentFilter);
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        unregisterReceiver(dataReceiver);
+        super.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        EventBus.getDefault().unregister(this);
+    }
+
+    private void getListOfChannelsAndApplicationsAndStartService() {
         ApiService.INSTANCE.getChannelsAndApplications(getAccessToken(), new ChannelsAndApplicationsListener() {
             @Override
-            public void onChannelsAndApplicationsResponse(@org.jetbrains.annotations.Nullable ChannelsResponse channelsResponse) {
-                subscribe(channelsResponse);
+            public void onChannelsAndApplicationsResponse(@Nullable ChannelsResponse channelsResponse) {
+                Intent serviceIntent = new Intent(MainActivity.this, PublishService.class);
+                serviceIntent.putExtra(CHANNELS_RESPONSE, channelsResponse);
+                startService(serviceIntent);
 
             }
 
@@ -72,56 +93,33 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void subscribe(ChannelsResponse channelsResponse) {
-        EventHub events = Centrifuge.newEventHub();
-        ConnectHandler connectHandler = new AppConnectHandler(this);
-        DisconnectHandler disconnectHandler = new AppDisconnectHandler(this);
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onDataReceived(DataReceivedEvent event) {
+        tvConnectStatus.setText(event.getData());
+    }
 
-        events.onConnect(connectHandler);
-        events.onDisconnect(disconnectHandler);
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onConnect(ConnectEvent event) {
+        tvConnectStatus.setText(event.getData());
+    }
 
-
-        Client client = Centrifuge.new_(
-                CENTRIFUGO_ADDRESS,
-                events,
-                Centrifuge.defaultConfig()
-        );
-
-
-        client.setToken(getJWT());
-        try {
-            client.connect();
-        } catch (Exception e) {
-            e.printStackTrace();
-            tvConnectStatus.setText(e.toString());
-            return;
-        }
-        SubscriptionEventHub subEvents = Centrifuge.newSubscriptionEventHub();
-        PublishHandler publishHandler = new AppPublishHandler((sub, event) -> {
-            runOnUiThread(() -> tvConnectStatus.setText(new String(event.getData())));
-        });
-        subEvents.onPublish(publishHandler);
-
-        Stream.ofNullable(channelsResponse.getChannels()).forEach(channel -> {
-            try {
-                Subscription sub = client.subscribe(String.format("%s:%s", channel.getDomain(), channel.getUuid()), subEvents);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-
-
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onDisconnect(ConnectEvent event) {
+        tvConnectStatus.setText(event.getData());
     }
 
     private String getAccessToken() {
         return getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE).getString(ACCESS_TOKEN, "");
     }
 
-    private String getJWT() {
-        return getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE).getString(JWT, "");
+    private boolean isServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    private String getUUID() {
-        return getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE).getString(UUID, "");
-    }
 }

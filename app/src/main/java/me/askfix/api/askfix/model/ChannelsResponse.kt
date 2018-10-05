@@ -2,8 +2,9 @@ package me.askfix.api.askfix.model
 
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
+import java.io.Serializable
 
-class ChannelsResponse {
+class ChannelsResponse : Serializable {
 
     @Expose
     @SerializedName("applications")
@@ -12,7 +13,7 @@ class ChannelsResponse {
     @SerializedName("channels")
     val channels: List<Channels>? = null
 
-    class Applications {
+    class Applications : Serializable {
         @Expose
         @SerializedName("uuid")
         val uuid: String? = null
@@ -24,7 +25,7 @@ class ChannelsResponse {
         val name: String? = null
     }
 
-    class Channels {
+    class Channels : Serializable {
         @Expose
         @SerializedName("uuid")
         val uuid: String? = null
