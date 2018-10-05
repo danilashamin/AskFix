@@ -1,34 +1,32 @@
 package me.askfix.api.askfix.dialogs;
 
 import android.content.Context;
-import android.widget.TextView;
+import android.widget.LinearLayout;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 
+import java.util.List;
+
 import me.askfix.api.askfix.R;
+import me.askfix.api.askfix.utils.MessageSetUtils;
 
 public class DataDialog {
-    private TextView tvChannelName;
-    private TextView tvData;
-    private
-    MaterialDialog dialog;
+    private LinearLayout llDialogContainer;
+    private MaterialDialog dialog;
 
     public DataDialog(Context context) {
         dialog = new MaterialDialog.Builder(context)
-                .customView(R.layout.dialog_data, false)
+                .customView(R.layout.layout_data, false)
                 .canceledOnTouchOutside(true)
                 .cancelable(true)
                 .build();
 
-        tvChannelName = (TextView) dialog.findViewById(R.id.tvChannelName);
-        tvData = (TextView) dialog.findViewById(R.id.tvData);
-
+        llDialogContainer = (LinearLayout) dialog.findViewById(R.id.llContainer);
 
     }
 
-    public void setData(String channelName, String data){
-        tvChannelName.setText(channelName);
-        tvData.setText(data);
+    public void setData(String channelName, List<String> data) {
+        MessageSetUtils.addMessagesToContainer(llDialogContainer, data, channelName);
     }
 
     public void show() {
@@ -37,9 +35,4 @@ public class DataDialog {
         }
     }
 
-    public void dismiss() {
-        if (dialog.isShowing()) {
-            dialog.dismiss();
-        }
-    }
 }

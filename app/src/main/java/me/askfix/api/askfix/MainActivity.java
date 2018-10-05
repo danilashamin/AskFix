@@ -84,7 +84,9 @@ public class MainActivity extends AppCompatActivity implements OnDataClickListen
         String newMessage = getIntent().getStringExtra(DATA);
         tvNewMessage.setText(newMessage != null ? String.format("New Message: %s", newMessage) : "");
         tvNewMessage.setOnClickListener(view -> {
-            dataDialog.setData(ChannelNameExtractor.getChannelName(newMessage), newMessage);
+            List<String> messageList = new ArrayList<>();
+            messageList.add(newMessage);
+            dataDialog.setData(ChannelNameExtractor.getChannelName(newMessage), messageList);
             dataDialog.show();
         });
     }
@@ -96,7 +98,7 @@ public class MainActivity extends AppCompatActivity implements OnDataClickListen
     }
 
     @Override
-    public void onDataClick(String channelName, String data) {
+    public void onDataClick(String channelName, List<String> data) {
         dataDialog.setData(channelName, data);
         dataDialog.show();
     }
@@ -149,6 +151,8 @@ public class MainActivity extends AppCompatActivity implements OnDataClickListen
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDataReceived(DataReceivedEvent event) {
         dataAdapter.updateData(event.getData());
+        String channelName = ChannelNameExtractor.getChannelName(event.getData());
+        Toast.makeText(this, String.format("New message in channel %s", channelName), Toast.LENGTH_SHORT).show();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
