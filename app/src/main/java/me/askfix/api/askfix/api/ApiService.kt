@@ -19,7 +19,7 @@ object ApiService {
 
     private val retrofitService = retrofit.create(RetrofitService::class.java)
 
-    public fun login(username: String, password: String, loginListener: LoginListener) {
+    fun login(username: String, password: String, loginListener: LoginListener) {
         val loginResponse = retrofitService.getLoginResponse(username, password)
         loginResponse.enqueue(object : Callback<LoginResponse> {
             override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
@@ -33,7 +33,7 @@ object ApiService {
         })
     }
 
-    public fun getChannelsAndApplications(accessToken: String?, channelsAndApplicationsListener: ChannelsAndApplicationsListener) {
+    fun getChannelsAndApplications(accessToken: String?, channelsAndApplicationsListener: ChannelsAndApplicationsListener) {
         val channelsResponse = retrofitService.getChannelsAndApplications(accessToken)
         channelsResponse.enqueue(object : Callback<ChannelsResponse> {
             override fun onFailure(call: Call<ChannelsResponse>, t: Throwable) {

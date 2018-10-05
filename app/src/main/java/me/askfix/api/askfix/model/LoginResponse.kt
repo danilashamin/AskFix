@@ -15,15 +15,15 @@ class LoginResponse {
     @SerializedName("access-token")
     private val accessToken: String? = null
 
-    public fun getJWT(): String? {
+    fun getJWT(): String? {
         return JWT
     }
 
-    public fun getUUID(): String? {
+    fun getUUID(): String? {
         return uuid
     }
 
-    public fun getAccessToken(): String? {
+    fun getAccessToken(): String? {
         return accessToken
     }
 }

@@ -8,7 +8,7 @@ class ChannelsResponse : Serializable {
 
     @Expose
     @SerializedName("applications")
-    public val applications: List<Applications>? = null
+    val applications: List<Applications>? = null
     @Expose
     @SerializedName("channels")
     val channels: List<Channels>? = null

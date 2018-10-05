@@ -74,7 +74,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun getSharedPrefs(): SharedPreferences {
-        return getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE);
+        return getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE)
     }
 
     private fun putDataInSharedPrefs(loginResponse: LoginResponse?) {
