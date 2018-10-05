@@ -58,11 +58,6 @@ public class PublishService extends Service {
     }
 
     @Override
-    public void onCreate() {
-        super.onCreate();
-    }
-
-    @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         ChannelsResponse channels = (ChannelsResponse) Objects.requireNonNull(intent.getExtras()).getSerializable(CHANNELS_RESPONSE);
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -152,16 +147,34 @@ public class PublishService extends Service {
     }
 
     private void sendData(String data, String eventType) {
-        if (isMainActivityForeground()) {
-            Intent intent = new Intent(DATA_RECEIVED_ACTION);
-            intent.putExtra(DATA, data);
-            intent.putExtra(EVENT_TYPE, eventType);
-            sendBroadcast(intent);
-        } else if (!isAppRunning()) {
+        if(!isAppOnForeground() || !isAppRunning()){
             sendNotification(data);
+        } else if (isMainActivityForeground()){
+            sendDataToMainActivity(data, eventType);
         }
     }
 
+    private void sendDataToMainActivity(String data, String eventType){
+        Intent intent = new Intent(DATA_RECEIVED_ACTION);
+        intent.putExtra(DATA, data);
+        intent.putExtra(EVENT_TYPE, eventType);
+        sendBroadcast(intent);
+    }
+
+    private boolean isAppOnForeground() {
+        ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> appProcesses = activityManager.getRunningAppProcesses();
+        if (appProcesses == null) {
+            return false;
+        }
+        final String packageName = getPackageName();
+        for (ActivityManager.RunningAppProcessInfo appProcess : appProcesses) {
+            if (appProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND && appProcess.processName.equals(packageName)) {
+                return true;
+            }
+        }
+        return false;
+    }
     private boolean isAppRunning() {
         ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

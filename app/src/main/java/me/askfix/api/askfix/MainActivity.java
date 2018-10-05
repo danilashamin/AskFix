@@ -10,11 +10,9 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.MaterialDialog;
 import com.annimon.stream.Stream;
 
 import org.greenrobot.eventbus.EventBus;
@@ -26,8 +24,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import me.askfix.api.askfix.adapters.DataAdapter;
 import me.askfix.api.askfix.adapters.OnDataClickListener;
 import me.askfix.api.askfix.api.ApiService;
@@ -86,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements OnDataClickListen
 
     private void initNewMessageField() {
         String newMessage = getIntent().getStringExtra(DATA);
-        tvNewMessage.setText(newMessage);
+        tvNewMessage.setText(newMessage != null ? String.format("New Message: %s", newMessage) : "");
         tvNewMessage.setOnClickListener(view -> {
             dataDialog.setData(ChannelNameExtractor.getChannelName(newMessage), newMessage);
             dataDialog.show();
