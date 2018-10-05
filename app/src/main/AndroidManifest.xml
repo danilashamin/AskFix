@@ -3,6 +3,7 @@
     package="me.askfix.api.askfix">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.GET_TASKS" />
 
     <application
         android:allowBackup="true"
@@ -19,7 +20,9 @@
             </intent-filter>
         </activity>
         <activity android:name=".MainActivity" />
-        <activity android:name=".MainActivity" />
+
+        <receiver android:name=".centrifuge.DataReceiver" />
+        <service android:name=".centrifuge.PublishService" />
     </application>
 
 </manifest>
