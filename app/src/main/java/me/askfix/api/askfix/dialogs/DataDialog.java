@@ -16,7 +16,7 @@ public class DataDialog {
 
     public DataDialog(Context context) {
         dialog = new MaterialDialog.Builder(context)
-                .customView(R.layout.layout_data, false)
+                .customView(R.layout.layout_data, true)
                 .canceledOnTouchOutside(true)
                 .cancelable(true)
                 .build();
@@ -26,7 +26,7 @@ public class DataDialog {
     }
 
     public void setData(String channelName, List<String> data) {
-        MessageSetUtils.addMessagesToContainer(llDialogContainer, data, channelName);
+        MessageSetUtils.addMessagesToContainer(llDialogContainer, data, channelName, MessageSetUtils.Ellipsize.NONE);
     }
 
     public void show() {
