@@ -47,7 +47,6 @@ import static me.askfix.api.askfix.C.UUID;
 
 public class MainActivity extends AppCompatActivity implements OnDataClickListener {
     TextView tvConnectStatus;
-    TextView tvNewMessage;
     RecyclerView rvData;
 
     private DataReceiver dataReceiver;
@@ -66,7 +65,6 @@ public class MainActivity extends AppCompatActivity implements OnDataClickListen
         findViews();
         dataReceiver = new DataReceiver();
         dataDialog = new DataDialog(this);
-        initNewMessageField();
         if (!isServiceRunning(PublishService.class)) {
             getListOfChannelsAndApplicationsAndStartService();
         } else {
@@ -76,19 +74,7 @@ public class MainActivity extends AppCompatActivity implements OnDataClickListen
 
     private void findViews() {
         tvConnectStatus = findViewById(R.id.tvConnectStatus);
-        tvNewMessage = findViewById(R.id.tvNewMessage);
         rvData = findViewById(R.id.rvData);
-    }
-
-    private void initNewMessageField() {
-        String newMessage = getIntent().getStringExtra(DATA);
-        tvNewMessage.setText(newMessage != null ? String.format("New Message: %s", newMessage) : "");
-        tvNewMessage.setOnClickListener(view -> {
-            List<String> messageList = new ArrayList<>();
-            messageList.add(newMessage);
-            dataDialog.setData(ChannelNameExtractor.getChannelName(newMessage), messageList);
-            dataDialog.show();
-        });
     }
 
     private void initRecyclerView() {
@@ -187,6 +173,15 @@ public class MainActivity extends AppCompatActivity implements OnDataClickListen
 
     private SharedPreferences getSharedPrefs() {
         return getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        String newMessage = intent.getStringExtra(DATA);
+        if (newMessage != null) {
+            dataAdapter.updateData(newMessage);
+        }
+        super.onNewIntent(intent);
     }
 
     private boolean isServiceRunning(Class<?> serviceClass) {

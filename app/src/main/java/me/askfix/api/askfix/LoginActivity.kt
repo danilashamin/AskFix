@@ -1,9 +1,11 @@
 package me.askfix.api.askfix
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import android.view.View
 import kotlinx.android.synthetic.main.activity_login.*
 import me.askfix.api.askfix.C.ACCESS_TOKEN
@@ -11,6 +13,7 @@ import me.askfix.api.askfix.C.JWT
 import me.askfix.api.askfix.C.SHARED_PREFS
 import me.askfix.api.askfix.C.UUID
 import me.askfix.api.askfix.api.ApiService
+import me.askfix.api.askfix.centrifuge.PublishService
 import me.askfix.api.askfix.model.LoginListener
 import me.askfix.api.askfix.model.LoginResponse
 import retrofit2.Call
@@ -52,6 +55,7 @@ class LoginActivity : AppCompatActivity() {
         btnDeleteToken.setOnClickListener {
             deleteToken()
             setFields()
+            Log.d("Service", "stop is " + stopService(Intent(this, PublishService::class.java)))
         }
     }
 

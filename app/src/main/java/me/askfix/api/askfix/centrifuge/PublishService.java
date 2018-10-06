@@ -49,6 +49,7 @@ import static me.askfix.api.askfix.C.UUID;
 public class PublishService extends Service {
 
     private NotificationManager notificationManager;
+    private Client client;
 
     @Nullable
     @Override
@@ -80,20 +81,20 @@ public class PublishService extends Service {
         events.onDisconnect((p0, p1) -> sendData(p1.getReason(), DISCONNECT_EVENT));
 
 
-        Client client = initClient(events);
+        client = initClient(events);
 
         client.setToken(getJWT());
-        connectClient(client);
+        connectClient();
 
         SubscriptionEventHub subEvents = Centrifuge.newSubscriptionEventHub();
 
         subEvents.onPublish((p0, p1) -> sendData(new String(p1.getData()), DATA_EVENT));
 
-        subscribeOnAppsChannels(client, subEvents, channelsResponse);
-        subscribeOnUserChannel(client, subEvents);
+        subscribeOnAppsChannels(subEvents, channelsResponse);
+        subscribeOnUserChannel(subEvents);
     }
 
-    private void connectClient(Client client) {
+    private void connectClient() {
         try {
             client.connect();
         } catch (Exception e) {
@@ -110,7 +111,7 @@ public class PublishService extends Service {
 
     }
 
-    private void subscribeOnAppsChannels(Client client, SubscriptionEventHub subEvents, ChannelsResponse channels) {
+    private void subscribeOnAppsChannels(SubscriptionEventHub subEvents, ChannelsResponse channels) {
         Stream.ofNullable(channels.getChannels()).forEach(channel -> {
             try {
                 client.subscribe(String.format("%s:%s", channel.getDomain(), channel.getUuid()), subEvents);
@@ -120,7 +121,7 @@ public class PublishService extends Service {
         });
     }
 
-    private void subscribeOnUserChannel(Client client, SubscriptionEventHub subEvents) {
+    private void subscribeOnUserChannel(SubscriptionEventHub subEvents) {
         try {
             client.subscribe("#" + getUUID(), subEvents);
         } catch (Exception e) {
@@ -146,14 +147,14 @@ public class PublishService extends Service {
     }
 
     private void sendData(String data, String eventType) {
-        if(!isAppOnForeground() || !isAppRunning()){
-            sendNotification(data);
-        } else if (isMainActivityForeground()){
+        if (!isAppOnForeground() || !isAppRunning()) {
+            sendNotification(data, eventType);
+        } else if (isMainActivityForeground()) {
             sendDataToMainActivity(data, eventType);
         }
     }
 
-    private void sendDataToMainActivity(String data, String eventType){
+    private void sendDataToMainActivity(String data, String eventType) {
         Intent intent = new Intent(DATA_RECEIVED_ACTION);
         intent.putExtra(DATA, data);
         intent.putExtra(EVENT_TYPE, eventType);
@@ -174,6 +175,7 @@ public class PublishService extends Service {
         }
         return false;
     }
+
     private boolean isAppRunning() {
         ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -196,19 +198,21 @@ public class PublishService extends Service {
         return getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE).getString(UUID, "");
     }
 
-    public void sendNotification(String data) {
+    public void sendNotification(String data, String eventType) {
+        if (!eventType.equals(DATA_EVENT)) {
+            return;
+        }
         String notificationInfo = String.format("New message from channel: %s", ChannelNameExtractor.getChannelName(data));
 
         Intent notificationIntent = new Intent(this, MainActivity.class);
-        notificationIntent.setAction(Intent.ACTION_MAIN);
-        notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
         notificationIntent.putExtra(DATA, data);
 
-        PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent contentIntent = PendingIntent.getActivity(getBaseContext(), 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID).
                 setContentIntent(contentIntent)
                 .setOngoing(false)
+                .setAutoCancel(true)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher_background))
                 .setTicker(notificationInfo)
@@ -231,4 +235,17 @@ public class PublishService extends Service {
         }
     }
 
+    @Override
+    public void onDestroy() {
+        disconnect();
+        super.onDestroy();
+    }
+
+    private void disconnect(){
+        try {
+            client.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
