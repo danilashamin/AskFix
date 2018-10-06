@@ -49,7 +49,7 @@ public class DataAdapter extends RecyclerView.Adapter<DataAdapter.DataViewHolder
             return;
         }
         List<String> messages = dataSet.get(i);
-        MessageSetUtils.addMessagesToContainer(viewHolder.llContainer, messages, channels.get(i));
+        MessageSetUtils.addMessagesToContainer(viewHolder.llContainer, messages, channels.get(i), MessageSetUtils.Ellipsize.ELLIPSIZE);
         viewHolder.llContainer.setOnClickListener(view -> listener.onDataClick(channels.get(i), dataSet.get(i)));
     }
 
