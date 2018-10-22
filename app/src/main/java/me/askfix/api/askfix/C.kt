@@ -16,7 +16,11 @@ object C {
     const val MAIN_ACTIVITY_NAME = "me.askfix.api.askfix.MainActivity"
     const val DATA_RECEIVED_ACTION = "DATA_RECEIVED_ACTION"
     const val CHANNEL_ID = "ASK_FIX_CHANNEL_ID"
+    const val FOREGROUND_CHANNEL_ID = "FOREGROUND_ASK_FIX_CHANNEL_ID"
+
     const val CHANNELS = "CHANNELS"
     const val DEFAULT_NOTIFICATION_ID = 101
+    const val FOREGROUND_NOTIFICATION_ID = 102
+
 
 }

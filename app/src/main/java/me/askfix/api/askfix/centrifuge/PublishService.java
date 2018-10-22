@@ -14,7 +14,6 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.support.v4.app.NotificationCompat;
 
 import com.annimon.stream.Stream;
@@ -41,6 +40,8 @@ import static me.askfix.api.askfix.C.DATA_RECEIVED_ACTION;
 import static me.askfix.api.askfix.C.DEFAULT_NOTIFICATION_ID;
 import static me.askfix.api.askfix.C.DISCONNECT_EVENT;
 import static me.askfix.api.askfix.C.EVENT_TYPE;
+import static me.askfix.api.askfix.C.FOREGROUND_CHANNEL_ID;
+import static me.askfix.api.askfix.C.FOREGROUND_NOTIFICATION_ID;
 import static me.askfix.api.askfix.C.JWT;
 import static me.askfix.api.askfix.C.MAIN_ACTIVITY_NAME;
 import static me.askfix.api.askfix.C.SHARED_PREFS;
@@ -61,11 +62,26 @@ public class PublishService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         ChannelsResponse channels = (ChannelsResponse) Objects.requireNonNull(intent.getExtras()).getSerializable(CHANNELS_RESPONSE);
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            setupChannels();
-        }
+        setupChannels();
+        startServiceForeground();
         subscribe(channels);
-        return super.onStartCommand(intent, flags, startId);
+        return START_STICKY;
+    }
+
+    private void startServiceForeground() {
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+
+        PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Notification notification = new NotificationCompat.Builder(this, FOREGROUND_CHANNEL_ID).setContentIntent(contentIntent)
+                .setOngoing(false)
+                .setAutoCancel(false)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
+                .setContentTitle(getString(R.string.service_working))
+                .setWhen(System.currentTimeMillis()).build();
+
+        startForeground(FOREGROUND_NOTIFICATION_ID, notification);
     }
 
     private void subscribe(ChannelsResponse channelsResponse) {
@@ -223,17 +239,36 @@ public class PublishService extends Service {
         notificationManager.notify(DEFAULT_NOTIFICATION_ID, notification);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private void setupChannels() {
-        NotificationChannel adminChannel = new NotificationChannel(CHANNEL_ID, CHANNEL_ID, NotificationManager.IMPORTANCE_DEFAULT);
-        adminChannel.setDescription(CHANNEL_ID);
-        adminChannel.enableLights(true);
-        adminChannel.setLightColor(Color.RED);
-        adminChannel.enableVibration(true);
-        if (notificationManager != null) {
-            notificationManager.createNotificationChannel(adminChannel);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel adminChannel;
+            adminChannel = new NotificationChannel(CHANNEL_ID, CHANNEL_ID, NotificationManager.IMPORTANCE_DEFAULT);
+            adminChannel.setDescription(CHANNEL_ID);
+            adminChannel.enableLights(true);
+            adminChannel.setLightColor(Color.RED);
+            adminChannel.enableVibration(true);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(adminChannel);
+            }
+
+            setupForegroundChannel();
         }
     }
+
+    private void setupForegroundChannel() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel adminChannel;
+            adminChannel = new NotificationChannel(FOREGROUND_CHANNEL_ID, FOREGROUND_CHANNEL_ID, NotificationManager.IMPORTANCE_DEFAULT);
+            adminChannel.setDescription(FOREGROUND_CHANNEL_ID);
+            adminChannel.enableLights(true);
+            adminChannel.setLightColor(Color.RED);
+            adminChannel.enableVibration(true);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(adminChannel);
+            }
+        }
+    }
+
 
     @Override
     public void onDestroy() {
@@ -241,7 +276,7 @@ public class PublishService extends Service {
         super.onDestroy();
     }
 
-    private void disconnect(){
+    private void disconnect() {
         try {
             client.disconnect();
         } catch (Exception e) {

@@ -12,4 +12,5 @@
     <string name="connected">Connected with client ID</string>
     <string name="disconnected">Disconnected</string>
     <string name="new_publication">New publication from channel</string>
+    <string name="service_working">Service is working</string>
 </resources>
